@@ -107,18 +107,8 @@ def aggregator_candidates(investor_name: str) -> list[DiscoveryCandidate]:
     slug = slugify(investor_name)
     return [
         DiscoveryCandidate(
-            url=f"https://www.crunchbase.com/organization/{slug}",
-            dimension="thesis",
-            source="deterministic",
-        ),
-        DiscoveryCandidate(
             url=f"https://www.crunchbase.com/person/{slug}",
             dimension="key_person",
-            source="deterministic",
-        ),
-        DiscoveryCandidate(
-            url=f"https://www.linkedin.com/company/{slug}/",
-            dimension="recent_activity",
             source="deterministic",
         ),
         DiscoveryCandidate(
@@ -127,13 +117,8 @@ def aggregator_candidates(investor_name: str) -> list[DiscoveryCandidate]:
             source="deterministic",
         ),
         DiscoveryCandidate(
-            url=f"https://dealroom.co/investors/{slug}",
+            url=f"https://dealroom.co/investors/{slug}/",
             dimension="key_person",
             source="deterministic",
             ),  
-        DiscoveryCandidate(
-            url=f"https://dealroom.co/companies/{slug}",
-            dimension="recent_activity",
-            source="deterministic",
-        ),
     ]

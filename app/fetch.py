@@ -53,6 +53,8 @@ async def connect():
             "CDP_URL": os.environ.get("CDP_URL", "http://127.0.0.1:9222"),
             "GROUNDHOG_MIN_DELAY_MS": str(config.GROUNDHOG_MIN_DELAY_MS),
             "GROUNDHOG_MAX_TOKENS": str(config.GROUNDHOG_MAX_TOKENS),
+            "GROUNDHOG_BLOCK_PRIVATE_IPS": str(config.GROUNDHOG_BLOCK_PRIVATE_IPS),
+            "USER_AGENT": str(config.GROUNDHOG_USER_AGENT),
         },
     )
     async with stdio_client(server_params) as (read, write):
@@ -116,6 +118,11 @@ def hit_looks_like_investor(hit) -> bool:
     text = f"{hit.get('title', '')} {hit.get('snippet', '')}".lower()
     return any(keyword in text for keyword in INVESTOR_SIGNAL_KEYWORDS)
 
+def hit_mentions_investor(hit, investor_name: str) -> bool:
+    text = f"{hit.get('title', '')} {hit.get('snippet', '')}".lower()
+    name_tokens = [t for t in investor_name.lower().split() if len(t) > 2]
+    return any(token in text for token in name_tokens)
+
 async def resolve_domain_from_name(session, investor_name):
     for template in SERP_QUERIES["identity"]:
         query = template.format(investor_name=investor_name)
@@ -126,6 +133,6 @@ async def resolve_domain_from_name(session, investor_name):
             netloc = urlparse(hit["url"]).netloc
             if is_aggregator_host(netloc):
                 continue
-            if hit_looks_like_investor(hit):
+            if hit_looks_like_investor(hit) and hit_mentions_investor(hit, investor_name):
                 return netloc
     return None

@@ -1,9 +1,10 @@
 from anthropic import Anthropic
 from dotenv import load_dotenv
+from app import config
 import os
 from app.extract import build_investor_profile, call_extraction, apply_post_filter, call_strategy
 from app.fetch import fetch_pages
-from app.discovery import discover_urls, normalize_domain
+from app.discovery import normalize_domain
 from app.quality_valid import is_empty_page, count_titles
 from app.gen_brief import render_brief
 
@@ -27,7 +28,7 @@ def main():
     pages_dimension = [p for p in pages if not is_empty_page(p, title_counts)]
     results = []
     for page in pages_dimension:
-        result = call_extraction(client, page)
+        result = call_extraction(client, investor_name, page)
         filtered = apply_post_filter(result, page)
         results.append(filtered)
 
@@ -38,13 +39,13 @@ def main():
     output_path = f"output/brief_{investor_name.replace(' ', '_')}.md"
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(brief)
-        
-    print()
-    print(profile)
-    print()
-    print(strategy)
-    print()
-    print(brief)
+    if config.DEBUG_MODE:
+        print("=== PROFILE BUILD ===")
+        print(profile)
+        print("=== STRATEGY BUILD ===")
+        print(strategy)
+        print("=== BRIEF ===")
+        print(brief)
 
 if __name__ == "__main__":
     main()
