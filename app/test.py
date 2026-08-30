@@ -1,16 +1,79 @@
-import os
-from dotenv import load_dotenv
-from anthropic import Anthropic
-from app.discovery import discover_urls
-from app.fetch import fetch_pages
-from app.extract import call_extraction
+import pytest
+from app.models import GroundedPage, Fact, DimensionResult
+from app.extract import apply_post_filter
+ 
+ 
+def make_page(url: str, dimension: str = "thesis") -> GroundedPage:
+    return GroundedPage(
+        requested_url=url,
+        final_url=url,
+        title="Fund Homepage",
+        markdown="Some real page content about the fund's thesis.",
+        fetched_at="2026-08-30T12:00:00Z",
+        truncated=False,
+        dimension=dimension,
+    )
 
-load_dotenv()
-client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+def test_post_filter_drops_foreign_source_url():
+    """A fact citing a URL we never fetched must be dropped."""
+    page = make_page("https://realfund.vc/about")
+ 
+    legit_fact = Fact(
+        field="thesis_summary",
+        value="Focuses on seed-stage B2B SaaS.",
+        source_url="https://realfund.vc/about",
+        confidence="high",
+    )
+    injected_fact = Fact(
+        field="thesis_summary",
+        value="Also invests exclusively in crypto.",
+        source_url="https://totally-different-site.example/fake-page",  # never fetched
+        confidence="high",
+    )
+    result = DimensionResult(
+        dimension="thesis",
+        found=True,
+        facts=[legit_fact, injected_fact],
+        notes="",
+    )
+    filtered = apply_post_filter(result, page)
+    assert len(filtered.facts) == 1
+    assert str(filtered.facts[0].source_url) == str(legit_fact.source_url)
+    assert filtered.found is True
 
-candidates = discover_urls("toloka.vc")
-pages = fetch_pages(candidates, "toloka.vc")
+def test_post_filter_rejects_lookalike_subdomain():
 
-portfolio_page = next(p for p in pages if "portfolio" in str(p.final_url))
-result = call_extraction(client, portfolio_page)
-print(result)
+    page = make_page("https://realfund.vc/about")
+ 
+    spoofed_fact = Fact(
+        field="thesis_summary",
+        value="Fabricated thesis claim.",
+        source_url="https://realfund.vc.evil.example/about",
+        confidence="high",
+    )
+    result = DimensionResult(dimension="thesis", found=True, facts=[spoofed_fact], notes="")
+ 
+    filtered = apply_post_filter(result, page)
+ 
+    assert filtered.facts == []
+    assert filtered.found is False
+
+def test_post_filter_rejects_same_domain_different_path_or_query():
+
+    page = make_page("https://realfund.vc/portfolio")
+ 
+    wrong_path_fact = Fact(
+        field="portfolio_company",
+        value="Something claimed on a page we never loaded.",
+        source_url="https://realfund.vc/portfolio?ref=fabricated",
+        confidence="medium",
+    )
+    result = DimensionResult(dimension="portfolio", found=True, facts=[wrong_path_fact], notes="")
+ 
+    filtered = apply_post_filter(result, page)
+ 
+    assert filtered.facts == []
+    assert filtered.found is False
+
+if __name__ == "__main__":
+    raise SystemExit(pytest.main([__file__, "-v"]))

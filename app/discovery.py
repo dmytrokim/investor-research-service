@@ -2,7 +2,6 @@ from urllib.parse import urlparse
 from pydantic import HttpUrl
 from app.models import DiscoveryCandidate
 from app.det_path import DET_PATHS
-from collections import Counter
 from app.models import GroundedPage
 import re
 
@@ -47,10 +46,22 @@ AGGREGATOR_HOSTS = {
     "dealroom.co",
     "wellfound.com",
 }
+KNOWN_AGGREGATOR_JUNK_TITLES = {
+    "crunchbase.com": {"Just a moment..."},
+    "wellfound.com": {"Page not found - 404 | Wellfound"},
+    "dealroom.co": {"Investor profiles — a snapshot of Dealroom's investor universe | Dealroom"},
+}
 
 def is_aggregator_host(netloc: str) -> bool:
     netloc = netloc.lower()
     return any(netloc == host or netloc.endswith("." + host) for host in AGGREGATOR_HOSTS)
+
+def is_known_aggregator_junk(page: GroundedPage) -> bool:
+    host = urlparse(str(page.final_url)).netloc.lower()
+    for aggregator_host, junk_titles in KNOWN_AGGREGATOR_JUNK_TITLES.items():
+        if (host == aggregator_host or host.endswith("." + aggregator_host)) and page.title in junk_titles:
+            return True
+    return False
 
 def build_fallback_queries(investor_name: str, domain: str | None, dimension: str) -> list[str]:
     queries = []
@@ -110,6 +121,11 @@ def aggregator_candidates(investor_name: str) -> list[DiscoveryCandidate]:
             url=f"https://www.crunchbase.com/person/{slug}",
             dimension="key_person",
             source="deterministic",
+        ),
+        DiscoveryCandidate(
+            url=f"https://www.crunchbase.com/organization/{slug}",
+            dimension="thesis",
+            source="deterministic"
         ),
         DiscoveryCandidate(
             url=f"https://wellfound.com/u/{slug}",

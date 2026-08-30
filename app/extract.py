@@ -126,7 +126,7 @@ def call_strategy(client, profile: InvestorProfile) -> Strategy:
         raw_text = response.content[0].text
         cleaned = strip_markdown_fences(raw_text)
         if config.DEBUG_MODE:
-            print("=== RAW CLEANED TEXT ===") #debug, rm later
+            print("=== RAW CLEANED TEXT ===") #debug
             print(repr(cleaned))
             print("=== END ===")
         data = json.loads(cleaned)

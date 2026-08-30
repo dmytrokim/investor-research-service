@@ -16,29 +16,36 @@ async def _run(investor_name, domain):
             return [], domain
 
         if domain is None:
-            domain = await resolve_domain_from_name(session, investor_name)
-            if domain is None:
-                print(f"Could not resolve a domain for {investor_name!r} via search.")
-                return [], None
+            if config.DISCOVERY_MODE == "serp":
+                domain = await resolve_domain_from_name(session, investor_name)
+                if domain is None:
+                    print(f"Could not resolve a domain for {investor_name!r} via search.")
+                    return [], None
+            elif config.DISCOVERY_MODE == "deterministic":
+                pass  # no domain, no SERP resolution attempted — proceed with aggregator guesses only
+            elif config.DISCOVERY_MODE == "api":
+                raise NotImplementedError("DISCOVERY_MODE='api' is not yet implemented.")
+            else:
+                raise ValueError(f"Unknown DISCOVERY_MODE: {config.DISCOVERY_MODE!r}")
 
         candidates = discover_urls(domain, investor_name)
         pages = await fetch_candidates(session, candidates)
 
-        needs_fallback = dimensions_needing_fallback(pages)
-        for dimension in needs_fallback:
-            serp_candidates = []
-            for query in build_fallback_queries(investor_name, domain, dimension):
-                search_result = await get_search(session, query)
-                if search_result is None or not search_result["hits"]:
-                    continue
-                filtered_hits = filter_hits_by_domain(search_result["hits"], domain)
-                if filtered_hits:
-                    serp_candidates = hits_to_candidates(filtered_hits, dimension)
-                    break
-            serp_candidates = dedupe_candidates(serp_candidates, pages)
-            serp_pages = await fetch_candidates(session, serp_candidates[:config.MAX_CANDIDATES_PER_DIMENSION])
-            pages.extend(serp_pages)
-
+        if config.DISCOVERY_MODE == "serp":
+            needs_fallback = dimensions_needing_fallback(pages)
+            for dimension in needs_fallback:
+                serp_candidates = []
+                for query in build_fallback_queries(investor_name, domain, dimension):
+                    search_result = await get_search(session, query)
+                    if search_result is None or not search_result["hits"]:
+                        continue
+                    filtered_hits = filter_hits_by_domain(search_result["hits"], domain)
+                    if filtered_hits:
+                        serp_candidates = hits_to_candidates(filtered_hits, dimension)
+                        break
+                serp_candidates = dedupe_candidates(serp_candidates, pages)
+                serp_pages = await fetch_candidates(session, serp_candidates[:config.MAX_CANDIDATES_PER_DIMENSION])
+                pages.extend(serp_pages)
         return pages, domain
 
 def fetch_pages(investor_name, domain):
@@ -110,8 +117,6 @@ async def fetch_candidates(session, candidates):
                 dimension=candidate.dimension,
             )
             pages.append(page)
-        if i < len(candidates) - 1:
-            await asyncio.sleep(config.SECURITY_DELAY_MS/1000)
     return pages
 
 def hit_looks_like_investor(hit) -> bool:

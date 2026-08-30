@@ -1,12 +1,14 @@
 from collections import Counter, defaultdict
-from app.models import DimensionResult, GroundedPage
-from app.discovery import ALL_DIMENSIONS
+from app.models import GroundedPage
+from app.discovery import ALL_DIMENSIONS, is_known_aggregator_junk
 
 def count_titles(pages):
     title = [page.title for page in pages]
     return Counter(title)
 
 def is_empty_page(page: GroundedPage, title_counts: Counter, min_words: int = 30) -> bool:
+    if is_known_aggregator_junk(page):
+        return True
     word_count = len(page.markdown.split())
     is_too_short = word_count < min_words
     is_duplicate_title = title_counts[page.title] > 1

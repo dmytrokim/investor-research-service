@@ -48,13 +48,12 @@ GROUNDHOG_MIN_DELAY_MS = 5000           # Groundhog's own per-domain rate limit
 GROUNDHOG_MAX_TOKENS = 20000            # max tokens for Groundhog responses
 GROUNDHOG_BLOCK_PRIVATE_IPS = True
 GROUNDHOG_USER_AGENT = "UA"
-SECURITY_DELAY_MS = 5000                # additional client-side delay between fetches
+SECURITY_DELAY_MS = 5000                # delay between fetch retries
 MAX_CANDIDATES_PER_DIMENSION = 3
 ```
 
 ## Limitations
- 
-- No test suite yet — validation has been manual, run-by-run.
+
 - Some sources (Crunchbase, LinkedIn) are frequently blocked by bot-detection walls and may not return usable content.
 - `DISCOVERY_MODE`'s `api` option is a placeholder and not yet implemented.
 

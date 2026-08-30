@@ -20,7 +20,6 @@ class DiscoveryCandidate(BaseModel):
     source: DiscoverySource
     
 class GroundedPage(BaseModel):
-    """Те, що повернув Groundhog по одному URL."""
     requested_url: str
     final_url: HttpUrl
     title: str | None
