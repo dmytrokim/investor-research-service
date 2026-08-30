@@ -1,6 +1,6 @@
 MODEL_ID = "claude-haiku-4-5-20251001"  # model used by default
 DISCOVERY_MODE = "serp" #deterministic | serp | api
-DEBUG_MODE = True   # Set True to see raw JSON output of your fetches
+DEBUG_MODE = False   # Set True to see raw JSON output of your fetches
 
 EXTRACTION_MAX_TOKENS = 2048
 STRATEGY_MAX_TOKENS = 2048
