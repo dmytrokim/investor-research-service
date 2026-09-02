@@ -56,5 +56,6 @@ MAX_CANDIDATES_PER_DIMENSION = 3
 
 - Some sources (Crunchbase, LinkedIn) are frequently blocked by bot-detection walls and may not return usable content.
 - `DISCOVERY_MODE`'s `api` option is a placeholder and not yet implemented.
+- Most likely SERP limitation: short/acronym investor names (e.g. "MHP") can resolve to a completely different, equally legitimate real company sharing the same acronym (mhpinvestors.com)
 
 
