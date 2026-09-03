@@ -9,6 +9,7 @@ from app.discovery import build_fallback_queries, filter_hits_by_domain, hits_to
 from app import config
 
 async def _run(investor_name, domain):
+    domain_is_trusted = domain is not None
     async with connect() as session:
         status = await get_status(session)
         if status is None or not status["browser_reachable"]:

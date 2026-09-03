@@ -10,7 +10,7 @@ def find_fetched_at(fact: Fact, fetched_pages: list[GroundedPage]) -> str:
 
 def render_facts(result: DimensionResult, fetched_pages: list[GroundedPage]) -> str:
     if not result.found:
-        return f"_No verified data. {result.notes}_"
+        return f"_Insufficient public data {result.notes}_"
     lines = []
     for fact in result.facts:
         fetched_at = find_fetched_at(fact, fetched_pages)

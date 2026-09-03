@@ -71,15 +71,15 @@ def build_fallback_queries(investor_name: str, domain: str | None, dimension: st
         queries.append(template.format(investor_name=investor_name, domain=domain or ""))
     return queries
 
-def discover_urls(domain: str | None, investor_name: str) -> list[DiscoveryCandidate]:
+def discover_urls(domain: str | None, investor_name: str, domain_is_trusted: bool = True) -> list[DiscoveryCandidate]:
     candidates = []
-
-    if domain:
-        for dimension, paths in DET_PATHS.items():
-            for path in paths:
-                candidates.append(
-                    DiscoveryCandidate(url=f"https://{domain}{path}", dimension=dimension, source="deterministic")
-                )
+    if domain and domain_is_trusted:
+        if domain:
+            for dimension, paths in DET_PATHS.items():
+                for path in paths:
+                    candidates.append(
+                        DiscoveryCandidate(url=f"https://{domain}{path}", dimension=dimension, source="deterministic")
+                    )
 
     candidates.extend(aggregator_candidates(investor_name))
     return candidates
@@ -136,5 +136,10 @@ def aggregator_candidates(investor_name: str) -> list[DiscoveryCandidate]:
             url=f"https://dealroom.co/investors/{slug}/",
             dimension="key_person",
             source="deterministic",
+            ),  
+        DiscoveryCandidate(
+                    url=f"https://www.linkedin.com/company/{slug}/",
+                    dimension="thesis",
+                    source="deterministic",
             ),  
     ]
